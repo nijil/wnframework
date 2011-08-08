@@ -3,30 +3,38 @@ import webnotes
 default_columns = ['name', 'creation', 'modified', 'modified_by', 'owner', 'docstatus', 'parent',\
 	 'parentfield', 'parenttype', 'idx']
 
+
 class DatabaseTable:
-	def __init__(self, doctype=None, prefix = 'tab', model_def = None):
-		self.doctype = doctype
+
+	columns = {}
+	current_columns = {}
+
+	foreign_keys = {}
+	
+	# lists for change
+	add_column = []
+	add_foreign_key = []
+	drop_foreign_key = []
+	change_type = []
+	add_index = []
+	drop_index = []
+	set_default = []
+	
+	def __init__(self, mtype=None, prefix = 'tab', model_def = None):
+		self.type = mtype
 		
 		if model_def:
 			self.model_def = model_def
-			self.doctype = model_def.parent.name
+			self.type = model_def.parent.name
 
-		self.name = prefix + self.doctype
+		self.name = prefix + self.type
 		
-		self.columns = {}
-		self.current_columns = {}
-
-		self.foreign_keys = {}
-		
-		# lists for change
-		self.add_column = []
-		self.change_type = []
-		self.add_index = []
-		self.drop_index = []
-		self.set_default = []
-		
-
 	def create(self):
+		"""
+			Create table based on `ModelDef`
+		"""
+		
+		self.get_columns_from_modeldef()
 		add_text = ''
 		
 		# columns
@@ -51,6 +59,7 @@ class DatabaseTable:
 			idx int(8),
 			%sindex parent(parent)) ENGINE=InnoDB""" % (self.name, add_text))
 
+
 	def get_column_definitions(self):
 		column_list = [] + default_columns
 		ret = []
@@ -69,12 +78,22 @@ class DatabaseTable:
 				ret.append(self.columns[k].get_index())
 		return ret
 
-	def get_columns_from_docfields(self):
+	def get_columns_from_modeldef(self):
+		"""
+			Load column definition from `ModelDef`
+		"""
+		# clear
+		self.columns = {}
+		
+		from webnotes.db.column import DatabaseColumn
 		for f in self.model_def.children:
-			if f.doctype=='DocField' and not f.no_column:
-				self.columns[f.fieldname] = DatabaseColumn(self, f.fieldname, f.fieldtype, f.length, f.default, f.search_index, f.options)
+			if f.type=='ModelProperty' and not f.no_column:
+				self.columns[f.fieldname] = DatabaseColumn(self, f)
 	
 	def get_columns_from_db(self):
+		"""
+			Load columns from db schema
+		"""
 		self.show_columns = webnotes.conn.sql("desc `%s`" % self.name)
 		for c in self.show_columns:
 			self.current_columns[c[0]] = {'name': c[0], 'type':c[1], 'index':c[3], 'default':c[4]}
@@ -82,7 +101,9 @@ class DatabaseTable:
 	# SET foreign keys
 	def set_foreign_keys(self):
 		if self.add_foreign_key:
+			from webnotes.db.manager import DbManager
 			tab_list = DbManager(webnotes.conn).get_tables_list(webnotes.conn.cur_db_name)
+
 			webnotes.conn.sql("set foreign_key_checks=0")
 			for col in self.add_foreign_key:
 				if col.options:
@@ -124,6 +145,14 @@ class DatabaseTable:
 			webnotes.conn.sql("set foreign_key_checks=1")
 		
 	def sync(self):
+		"""
+			Create / Update table as per the modeldef
+		"""
+		from webnotes.db.manager import DbManager
+
+		# load columns 
+		self.get_columns_from_modeldef()		
+
 		if not self.name in DbManager(webnotes.conn).get_tables_list(webnotes.conn.cur_db_name):
 			self.create()
 		else:
@@ -156,4 +185,8 @@ class DatabaseTable:
 			webnotes.conn.sql("alter table `%s` alter column `%s` set default %s" % (self.name, col.fieldname, '%s'), col.default)
 
 
-		
+	def drop(self):
+		"""
+			Drop the table
+		"""
+		webnotes.conn.sql("drop table `%s`" % self.name)

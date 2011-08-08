@@ -52,8 +52,8 @@ class Model:
 			return properties
 		"""
 		self.load_def()
-		
-		fl = filter(lambda x: x.type=='DocField', self._def.children)
+				
+		fl = filter(lambda x: x.type=='ModelProperty', self._def.children)
 
 		# filter additional keywords
 		if args:

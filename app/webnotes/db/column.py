@@ -30,8 +30,14 @@ class DatabaseColumn:
 	def __init__(self, table, property_def):
 		self.table = table
 		self.__dict__.update(property_def.get_values())
+
+	def __getattr__(self, name):
+		"""
+			If no attribute, send `None`
+		"""
+		return self.__dict__.get(name, None)
 		
-	def get_definition(self):
+	def get_definition(self, with_default=1):
 		d = type_map.get(self.fieldtype.lower())
 
 		if not d:
@@ -40,7 +46,8 @@ class DatabaseColumn:
 		ret = d[0]
 		if d[1]:
 			ret += '(' + d[1] + ')'
-		if with_default and self.default and (self.default not in default_shortcuts):
+		if with_default and self.default \
+			and (self.default not in default_shortcuts):
 			ret += ' default "' + self.default.replace('"', '\"') + '"'
 		if self.reqd:
 			ret += ' not null'

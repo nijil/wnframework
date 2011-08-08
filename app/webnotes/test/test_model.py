@@ -86,7 +86,9 @@ class TestModel(unittest.TestCase):
 
 	def test_read_file_collection(self):
 		from webnotes.model.collection import FileCollection
-		f = FileCollection('core/doctype/sandbox')
+		from webnotes.model.model_index import get_model_path
+		
+		f = FileCollection(get_model_path('Sandbox'))
 		self.assertTrue(f.parent.name=='Sandbox')
 		
 	def test_insert_db_collection(self):

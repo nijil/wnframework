@@ -33,14 +33,22 @@ class ControllerFactory:
 		except ImportError, e:
 			webnotes.errprint(webnotes.getTraceback())
 			return None
-			
+	
+	def get_relative_package_path(self):
+		"""
+			Gets the path relative to the app_path folder
+		"""
+		import os
+		from webnotes import app_path
+		return os.path.relpath(os.path.dirname(self.collection.parent._def.path), app_path)
+	
 	def import_model_package(self):
 		"""
 			import the package of the parent of the collection
 		"""
 		import os
-		model_path = os.path.dirname(self.collection.parent._def.path).replace(os.path.sep, '.')
-		return self.get_module_obj(model_path)
+		self.model_full_name = self.get_relative_package_path().replace(os.path.sep, '.')
+		return self.get_module_obj(self.model_full_name)
 			
 	def get_class_obj(self, package):
 		"""
@@ -64,8 +72,11 @@ class ControllerFactory:
 		"""
 			returns the std controller object
 		"""	
-		model_path = self.collection.parent._def.path.replace('.model','').replace(os.path.sep, '.')
-		module_obj = self.get_module_obj(model_path)
+		import os
+		from webnotes.utils import scrub
+		
+		std_controller_name = self.model_full_name + '.' + scrub(self.collection.parent._def.name)
+		module_obj = self.get_module_obj(std_controller_name)
 			
 		std_class_name = self.collection.parent.type.replace(' ','') + 'Controller'
 				

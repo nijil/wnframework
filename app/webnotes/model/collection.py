@@ -22,8 +22,7 @@ class Collection:
 		self.name = name
 		if models:
 			if type(models[0])==dict:
-				from webnotes.model.model import DatabaseModel
-				models = [DatabaseModel(attributes=d) for d in models]
+				models = self.objectify(models)
 
 			self.set_models(models)
 
@@ -63,7 +62,16 @@ class Collection:
 					self.parent = d
 				else:
 					self.children.append(d)
-		
+	
+	def add_model(self, m):
+		"""
+			Objectify and add a new child model to `models` and `children`
+		"""
+		if type(m)==dict:
+			m = self.objectify([m])[0]
+		self.children.append(m)
+		self.models.append(m)
+	
 	def set_name(self):
 		"""
 			Set name (id) for this record
@@ -131,6 +139,9 @@ class Collection:
 		"""
 		if hasattr(self, 'controller'):
 			return
+			
+		# load parent ModelDef (so that we can get the controller path)
+		self.parent.load_def()
 			
 		from webnotes.model.controller import ControllerFactory
 		ControllerFactory(self).set()
@@ -222,7 +233,7 @@ class DatabaseCollection(Collection):
 	"""
 		Collection stored in files
 	"""
-	def __init__(self, mtype, name=None, models=[]):
+	def __init__(self, mtype=None, name=None, models=[]):
 		Collection.__init__(self, mtype, name, models)
 
 		# autoread
@@ -233,6 +244,13 @@ class DatabaseCollection(Collection):
 		elif mtype and not name and not models:
 			from webnotes.model.model import DatabaseModel
 			self.parent = DatabaseModel(mtype)
+
+	def objectify(self, models):
+		"""
+			Convert dicts to `DatabaseModel`
+		"""
+		from webnotes.model.model import DatabaseModel
+		return [DatabaseModel(attributes=d) for d in models]
 
 	def read(self):
 		"""
@@ -289,6 +307,13 @@ class FileCollection(Collection):
 		# autoread
 		if path and not models:
 			self.read()
+
+	def objectify(self, models):
+		"""
+			Convert dicts to `Model`
+		"""
+		from webnotes.model.model import Model
+		return [Model(attributes=d) for d in models]
 		
 	def read(self):
 		"""

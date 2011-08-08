@@ -7,15 +7,14 @@ from webnotes.model.collection import FileCollection
 
 class ModelDef(FileCollection):
 	"""
-		Class for Meta Model (DocType)
+		Class for Model Definition `ModelDef` (DocType)
 	"""
 	def __init__(self, name):
 		"""
 			Load the model (from file)
 		"""
 		from webnotes.model.model_index import get_model_path
-		path = get_model_path(name)
-
+		self.path = get_model_path(name)
 		self.name = name
 		self.type = 'ModelDef'
 		
