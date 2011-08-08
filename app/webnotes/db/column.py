@@ -48,9 +48,9 @@ class DatabaseColumn:
 			ret += '(' + d[1] + ')'
 		if with_default and self.default \
 			and (self.default not in default_shortcuts):
-			ret += ' default "' + self.default.replace('"', '\"') + '"'
+			ret += ' DEFAULT "' + self.default.replace('"', '\"') + '"'
 		if self.reqd:
-			ret += ' not null'
+			ret += ' NOT NULL'
 		return ret
 	
 	def has_index(self):
@@ -65,8 +65,14 @@ class DatabaseColumn:
 		"""
 			Get index definition
 		"""
-		return 'index `' + self.fieldname + '`(`' + self.fieldname + '`)'
-		
+		return 'INDEX `' + self.fieldname + '`(`' + self.fieldname + '`)'
+	
+	def get_foreign_key_def(self):
+		"""
+			Get foreign key definition (at time of table creation)
+		"""
+		return 'FOREIGN KEY (`%s`) REFERENCES `tab%s`(name) ON UPDATE CASCADE' % (self.fieldname, self.options)
+	
 	def diff(self, current_def):
 		"""
 			Updates table if there is any difference between current and main
@@ -90,7 +96,7 @@ class DatabaseColumn:
 		
 		# index
 		else:
-			if (current_def['index'] and not self.set_index):
+			if (current_def['index'] and not (self.set_index or self.fieldtype=='Link')):
 				self.table.drop_index.append(self)
 			
 			if (not current_def['index'] and self.set_index and not (column_def in ['text','blob'])):

@@ -62,6 +62,20 @@ class Collection:
 					self.parent = d
 				else:
 					self.children.append(d)
+
+	def get_models(self, **args):
+		"""
+			Return models filtered by args
+		"""
+		# copy the children list
+		fl = [c for c in self.models]
+		
+		# filter for each argument
+		if args:
+			for key in args:
+				fl = filter(lambda x: x.get(key)==args[key], fl)
+		
+		return fl
 	
 	def add_model(self, m):
 		"""
@@ -72,16 +86,22 @@ class Collection:
 		self.children.append(m)
 		self.models.append(m)
 	
-	def set_name(self):
+	def delete_model(self, **args):
 		"""
-			Set name (id) for this record
+			Remove models from the list
 		"""
+		cl = []
+		for c in self.children:
+			for key in args:
+				if c.get(key) != args[key]:
+					cl.append(c)
+				elif getattr(c, 'delete'):
+					c.delete()
+		
+		self.children = cl
+		self.models = [self.parent] + cl
 
-		from webnotes.model.naming import NamingControl
-		self.parent.load_def()
-		NamingControl(self).set_name()
-		self.rename_parent_in_children()
-	
+
 	def rename_parent_in_children(self):
 		"""
 			parent may have a new name after insert
@@ -96,6 +116,16 @@ class Collection:
 			return as a list of dictionaries
 		"""
 		return [d.get_values(with_type) for d in self.models]
+
+	def set_name(self):
+		"""
+			Set name (id) for this record
+		"""
+
+		from webnotes.model.naming import NamingControl
+		self.parent.load_def()
+		NamingControl(self).set_name()
+		self.rename_parent_in_children()
 
 	def check_if_latest(self):
 		"""

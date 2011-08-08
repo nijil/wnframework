@@ -33,11 +33,11 @@ class Model:
 		"""
 		return self.__dict__.get(name, None)
 		
-	def get(self, name):
+	def get(self, name, defval=None):
 		"""
 			Getter
 		"""
-		return self.__dict__.get(name, None)
+		return self.__dict__.get(name, defval)
 		
 	def load_def(self):
 		"""
@@ -152,8 +152,8 @@ class DatabaseModel(Model):
 		"""
 			Delete
 		"""
-		self._has_live_links()
-		self._db_delete()
+		DatabaseRow('tab' + self.type, self.get_values()).delete()
+		
 
 
 class SingleModel(Model):

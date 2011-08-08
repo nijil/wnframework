@@ -34,7 +34,7 @@ test_model_def = FileCollection(models = [
 test_collection = DatabaseCollection(models = [{
 	'type': 'Temp Sandbox',
 	'test_data': 'test',
-	'test_link': 'Guest'
+	'test_link': 'Administrator'
 }])
 
 from webnotes.db.table import DatabaseTable
@@ -53,42 +53,60 @@ class TestDbTable(TestCase):
 	def test_creation(self):
 		# insert a record
 		test_collection.insert()
-
 		self.assertTrue(DatabaseRow('tabTemp Sandbox').read(test_data='test')['test_data']=='test')
 
 	def test_db_add_column(self):
 		test_model_def.add_model({
-			'doctype':'DocField',
-			'fieldname':'test_data``',
-			'label':'Test Data``',
+			'type':'ModelProperty',
+			'fieldname':'test_data1',
+			'label':'Test Data1',
 			'fieldtype':'Data'
 		})
+				
 		self.tab.sync()
 		test_collection.parent.test_data1 = 'test1'
 		test_collection.insert()
-		self.assertTrue(DatabaseRow('tabTemp Sandbox').read(test_data1='test1')['test_data1']=='test1')
-	
+		self.assertTrue(DatabaseRow('tabTemp Sandbox').read(test_data='test')['test_data1']=='test1')
+		
+		# cleanup the removed column
+		test_model_def.delete_model(fieldname='test_data1')
+		
+		
 	def test_db_add_index(self):
-		test_model_def.get_children(fieldname='test_data')[0].index = 1
+		test_model_def.get_models(fieldname='test_data')[0].set_index = 1
 		self.tab.sync()
-		self.assertTrue(tab.is_indexed('test_data'))
+		self.assertTrue(self.tab.is_indexed('test_data'))
 		
 	def test_db_drop_index(self):
-		test_model_def.get_children(fieldname='test_data')[0].index = 1
+		test_model_def.get_models(fieldname='test_data')[0].set_index = 1
 		self.tab.sync()
 		self.assertTrue(self.tab.is_indexed('test_data'))
 
-		test_model_def.get_children(fieldname='test_data')[0].index = 0
+		test_model_def.get_models(fieldname='test_data')[0].set_index = 0
+		
+		#print webnotes.conn.sql("show create table `tabTemp Sandbox`")
+		
 		self.tab.sync()
 		self.assertFalse(self.tab.is_indexed('test_data'))
 		
 	def test_db_add_fkey(self):
-		tmp = test_model_def.get_children(fieldname='test_data')[0]
+		tmp = test_model_def.get_models(fieldname='test_data')[0]
 		tmp.fieldtype = 'Link'
 		tmp.options = 'Profile'
+
 		self.tab.sync()
-		self.assertRaises(test_collection.insert, webnotes.InvalidLinkError)
+
+		#print webnotes.conn.sql("show create table `tabTemp Sandbox`")[0][1]
+
+		import MySQLdb
+		self.assertRaises(MySQLdb.IntegrityError, test_collection.insert)
 		self.assertTrue(self.tab.is_indexed('test_data'))
+
+		# cleanup
+		tmp = test_model_def.get_models(fieldname='test_data')[0]
+		tmp.fieldtype = 'Data'
+		tmp.options = None
+
 		
 	def tearDown(self):
 		test_model_def.delete()

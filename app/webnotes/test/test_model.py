@@ -112,14 +112,9 @@ class TestModel(unittest.TestCase):
 	def test_validate_bad_link(self):
 		dc = DatabaseCollection('Sandbox', models=[self.get_test_model()])
 		dc.parent.test_link = 'xxx'
-		try:
-			dc.insert()
-		except Exception, e:
-			self.assertTrue(e.args[0]==FOREIGN_KEY_INSERT_ERROR)
-			return
-			
-		self.assertFalse(1) # should never come here
-
+	
+		import MySQLdb
+		self.assertRaises(MySQLdb.IntegrityError, dc.insert)
 			
 	def test_validate_bad_options(self):
 		dc = DatabaseCollection('Sandbox', models=[self.get_test_model()])

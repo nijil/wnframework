@@ -93,7 +93,7 @@ class DatabaseRow:
 		"""
 			Delete by name
 		"""
-		pass
+		webnotes.conn.sql("delete from `%s` where name=%s" % (self.table, '%s'), self.record['name'])
 		
 class Single:
 	def __init__(self, doctype, record):
