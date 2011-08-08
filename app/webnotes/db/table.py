@@ -228,4 +228,7 @@ class DatabaseTable:
 		"""
 			Drop the table
 		"""
-		webnotes.conn.sql("drop table `%s`" % self.name)
+		try:
+			webnotes.conn.sql("drop table `%s`" % self.name)
+		except:
+			pass

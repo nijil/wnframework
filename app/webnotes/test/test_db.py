@@ -12,7 +12,14 @@ from webnotes.db.row import DatabaseRow, Single
 
 class DbTest(unittest.TestCase):
 	def setUp(self):
-		# connect as per defs
+		from webnotes.model.model_index import get_model_path
+		from webnotes.db.table import DatabaseTable
+		from webnotes.model.collection import FileCollection
+		
+		# create the sandbox table
+		sb = FileCollection(get_model_path('Sandbox'))
+		self.tab = DatabaseTable(model_def = sb)
+		self.tab.create()
 		webnotes.conn.begin()
 			
 	def test_select(self):
@@ -54,3 +61,4 @@ class DbTest(unittest.TestCase):
 
 	def tearDown(self):
 		webnotes.conn.rollback()
+		self.tab.drop()

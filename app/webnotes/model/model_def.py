@@ -23,4 +23,11 @@ class ModelDef(FileCollection):
 		from core.doctype.property_setter.override_properties import PropertyOverrider
 		PropertyOverrider(self).override()
 
-	
+	def sync_schema(self):
+		"""
+			Sync the table
+		"""
+		from webnotes.db.table import DatabaseTable
+		self.db_table = DatabaseTable(model_def = self)
+		self.db_table.sync()
+		

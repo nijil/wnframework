@@ -353,26 +353,32 @@ class FileCollection(Collection):
 		from webnotes.model.utils import peval_collection
 		
 		if self.path:
+			import os
+			
+			# if not a full path, get the full
+			# path from app path
+			if not self.path.startswith(os.path.sep):
+				self.path = self.get_parent_path(self.path)
+			
 			f = file(self.path, 'r')
 			self.set_models([Model(attributes=m) for m in peval_collection(f.read())])
 			f.close()
 	
-	def get_parent_folder(self):
+	def get_parent_folder(self, path=None):
 		"""
 			Returns the folder of the parent model
 		"""
 		import os
 		from webnotes import app_path
-		return os.path.join(app_path, self.parent.path)
+		return os.path.join(app_path, path or self.parent.path)
 	
-	def get_parent_path(self):
+	def get_parent_path(self, path=None):
 		"""
-			returns the full path of the collection (via parent model)
+			Returns the full path of the collection (via parent model)
 		"""
 		import os
 		from webnotes.utils import scrub
-		
-		return os.path.join(self.get_parent_folder(), scrub(self.parent.name) + '.model')
+		return os.path.join(self.get_parent_folder(path), scrub(self.parent.name) + '.model')
 		
 	def insert(self):
 		"""

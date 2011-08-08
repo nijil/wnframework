@@ -37,20 +37,27 @@ x update
 * permissions
 -----------------
 * custom property patch (add fieldname)
-* reimplement foreign keys
-* methods
+x reimplement foreign keys
+x methods
 
 """
 
 import unittest
 import webnotes
 
-from webnotes.model.collection import DatabaseCollection
+from webnotes.model.collection import DatabaseCollection, FileCollection
 from webnotes.model.model import DatabaseModel
 from webnotes.db.errors import *
 
 class TestModel(unittest.TestCase):
 	def setUp(self):
+		from webnotes.model.model_index import get_model_path
+		from webnotes.db.table import DatabaseTable
+
+		# create the sandbox table
+		sb = FileCollection(get_model_path('Sandbox'))
+		self.tab = DatabaseTable(model_def = sb)
+		self.tab.create()
 		webnotes.conn.begin()
 
 	def get_test_model(self):
@@ -123,12 +130,12 @@ class TestModel(unittest.TestCase):
 
 	def test_validate_mandatory(self):
 		dc = DatabaseCollection('Sandbox', models=[self.get_test_model()])
-		dc.parent.load_def()
-		# make mandatory
-		dc.parent.get_properties(fieldname='test_data')[0].reqd = 1
 		dc.parent.test_data = None
-		self.assertRaises(webnotes.MandatoryAttributeError, dc.insert)
+		
+		from MySQLdb import OperationalError
+		self.assertRaises(OperationalError, dc.insert)
 		
 	def tearDown(self):
 		webnotes.conn.rollback()
+		self.tab.drop()
 		

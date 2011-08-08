@@ -67,7 +67,8 @@
 		'fieldname': 'test_data',
 		'fieldtype': 'Data',
 		'idx': 1,
-		'label': 'Test Data'
+		'label': 'Test Data',
+		'reqd': 1
 	},
 
 	# ModelProperty

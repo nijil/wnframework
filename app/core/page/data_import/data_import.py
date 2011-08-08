@@ -21,12 +21,17 @@ def upload(arg=None):
 
 
 class ImportCSV:
-	def __init__(self, content, doctype=None, mapper={}):
+	def __init__(self, content, mtype=None, mapper={}):
 		import csv
 		self.data = []
 		
 		self.mapper = mapper
-		self.doctype = doctype
+		self.type = mtype
+		
+		from webnotes.model.model_index import get_model_path
+		from webnotes.model.collection import FileCollection
+		
+		self.model_def = FileCollection(get_model_path(self.type))
 		
 		raw = csv.reader(content.splitlines())
 		for r in raw:
@@ -48,7 +53,7 @@ class ImportCSV:
 		n = []
 		for c in self.mapper:
 			cn = webnotes.conn.sql("select fieldname from tabDocField where label=%s and parent=%s", \
-				(c, self.doctype))[0][0]
+				(c, self.type))[0][0]
 			n.append(cn)
 			
 		self.mapper = n
@@ -58,7 +63,7 @@ class ImportCSV:
 			Import the records into table
 			Uses webnotes.model.doclist
 		"""
-		from webnotes.model.collection import Collection
+		from webnotes.model.collection import DatabaseCollection
 		for d in self.data[1:]:
 			tmp = {}
 			for i in range(len(self.mapper)):
@@ -68,7 +73,7 @@ class ImportCSV:
 				if tmp.get('name'):
 					# overwrite
 					existing = webnotes.conn.sql("select * from `tab%s` where name=%s" %
-						(self.doctype, '%s'), tmp['name'], as_dict=1)[0]
+						(self.type, '%s'), tmp['name'], as_dict=1)[0]
 					existing.update(tmp)
 					tmp = existing
 				else:				
@@ -76,9 +81,9 @@ class ImportCSV:
 					tmp['owner'] = webnotes.session['user']
 					tmp['__islocal'] = 1 # not saved yet
 
-				tmp['doctype'] = self.doctype
+				tmp['doctype'] = self.type
 				
-				doclist = Collection(docs=[tmp])
+				doclist = DatabaseCollection(models=[tmp])
 				doclist.save()
 				
 				
