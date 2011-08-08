@@ -17,14 +17,15 @@ class Collection:
 	to_docstatus = 0
 	obj = None
 	
-	def __init__(self, ttype=None, name=None, models = [], raw_models=[]):
-		self.type = ttype
+	def __init__(self, mtype=None, name=None, models=[]):
+		self.type = mtype
 		self.name = name
 		if models:
+			if type(models[0])==dict:
+				from webnotes.model.model import DatabaseModel
+				models = [DatabaseModel(attributes=d) for d in models]
+
 			self.set_models(models)
-		if raw_models:
-			from webnotes.model.model import DatabaseModel
-			self.set_models([DatabaseModel(attributes=d) for d in raw_models])
 
 	def __iter__(self):
 		"""
@@ -80,13 +81,13 @@ class Collection:
 		for c in self.children:
 			if c.parent and (not c.parent.startswith('old_parent:')):
 				c.parent = self.parent.name
-				c.parenttype = self.parent.type
+				c.parenmtype = self.parent.type
 
-	def to_dict(self):
+	def to_dict(self, with_type=None):
 		"""
 			return as a list of dictionaries
 		"""
-		return [d.get_values() for d in self.models]
+		return [d.get_values(with_type) for d in self.models]
 
 	def check_if_latest(self):
 		"""
@@ -221,17 +222,17 @@ class DatabaseCollection(Collection):
 	"""
 		Collection stored in files
 	"""
-	def __init__(self, ttype, name=None, models=[]):
-		Collection.__init__(self, ttype, name, models)
+	def __init__(self, mtype, name=None, models=[]):
+		Collection.__init__(self, mtype, name, models)
 
 		# autoread
-		if ttype and name and not models:
+		if mtype and name and not models:
 			self.read()
 			
-		# only ttype supplied, set as new
-		elif ttype and not name and not models:
+		# only mtype supplied, set as new
+		elif mtype and not name and not models:
 			from webnotes.model.model import DatabaseModel
-			self.parent = DatabaseModel(ttype)
+			self.parent = DatabaseModel(mtype)
 
 	def read(self):
 		"""
@@ -248,7 +249,7 @@ class DatabaseCollection(Collection):
 		tables = parent.get_properties(fieldtype='Table')
 
 		for t in tables:
-			data = webnotes.conn.sql("select * from `tab%s` where parent=%s and parenttype=%s and parentfield=%s" \
+			data = webnotes.conn.sql("select * from `tab%s` where parent=%s and parenmtype=%s and parentfield=%s" \
 				% (t.options, '%s', '%s', '%s'), (parent.name, parent.type, t.fieldname), as_dict=1)
 			for d in data:
 				models.append(DatabaseModel(t.options, d.name, attributes=d))
@@ -279,12 +280,14 @@ class FileCollection(Collection):
 	"""
 		Collection stored in files
 	"""
-	def __init__(self, path, ttype=None, name=None, models=[]):
+	def __init__(self, path=None, mtype=None, name=None, models= None):
 		self.path = path
-		Collection.__init__(self, ttype, name, models)
+
+		# load from given dict type models
+		Collection.__init__(self, mtype=mtype, name=name, models=models)
 
 		# autoread
-		if path:
+		if path and not models:
 			self.read()
 		
 	def read(self):
@@ -294,18 +297,39 @@ class FileCollection(Collection):
 		from webnotes.model.model import Model
 		from webnotes.model.utils import peval_collection
 		
-		if path:
+		if self.path:
 			f = file(self.path, 'r')
 			self.set_models([Model(attributes=m) for m in peval_collection(f.read())])
 			f.close()
+	
+	def get_parent_folder(self):
+		"""
+			Returns the folder of the parent model
+		"""
+		import os
+		from webnotes import app_path
+		return os.path.join(app_path, self.parent.path)
+	
+	def get_parent_path(self):
+		"""
+			returns the full path of the collection (via parent model)
+		"""
+		import os
+		from webnotes.utils import scrub
+		
+		return os.path.join(self.get_parent_folder(), scrub(self.parent.name) + '.model')
 		
 	def insert(self):
 		"""
 			Export the file collection
 		"""
 		from webnotes.model.utils import pprint_collection
-		f = file(self.path, 'w')
-		f.write(pprint_collection(self.to_dict()))
+		from webnotes.utils import create_folder
+		
+		create_folder(self.get_parent_folder())
+		
+		f = file(self.get_parent_path(), 'w')
+		f.write(pprint_collection(self.to_dict(with_type=1)))
 		f.close()
 		
 	def update(self):
@@ -319,5 +343,5 @@ class FileCollection(Collection):
 			Delete file
 		"""
 		import os
-		os.remove(self.path)
+		os.remove(self.path or self.get_parent_path())
 

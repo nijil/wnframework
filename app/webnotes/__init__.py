@@ -125,20 +125,7 @@ def get_files_path():
 		return os.path.join(defs.files_path, conn.cur_db_name)
 	else:
 		return os.path.join(get_index_path(), 'user_files', conn.cur_db_name)
-	
-def create_folder(path):
-	"""
-	Wrapper function for os.makedirs (does not throw exception if directory exists)
-	"""
-	import os
-	
-	try:
-		os.makedirs(path)
-	except Exception, e:
-		if e.args[0]==17: 
-			pass
-		else: 
-			raise e
+
 
 
 def connect(db_name):

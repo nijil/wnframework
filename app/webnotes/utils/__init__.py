@@ -1,3 +1,8 @@
+"""
+	Common misc utility functions.
+	**Needs Refactoring**
+"""
+
 # util __init__.py
 
 import webnotes
@@ -7,6 +12,12 @@ month_name = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','No
 month_name_full = ['','January','February','March','April','May','June','July','August','September','October','November','December']
 no_value_fields = ['Section Break', 'Column Break', 'HTML', 'Table', 'FlexTable', 'Button', 'Image', 'Graph']
 default_fields = ['doctype','name','owner','creation','modified','modified_by','parent','parentfield','parenttype','idx','docstatus']
+
+def scrub(txt):
+	"""
+		Make code friendly names
+	"""
+	return txt.replace(' ','_').replace('-', '_').replace('/', '_').lower()
 
 def getCSVelement(v):
 	"""
@@ -619,6 +630,8 @@ def get_diff_dict(d1, d2):
 	for d in diff_keys: ret[d] = d2[d]
 	return ret
 
+# File
+# ==============================================================================
 
 def get_file_timestamp(fn):
 	"""
@@ -635,6 +648,16 @@ def get_file_timestamp(fn):
 		else:
 			return None
 
-
+def create_folder(path):
+	"""
+	Wrapper function for os.makedirs (does not throw exception if directory exists)
+	"""
+	import os
 	
-
+	try:
+		os.makedirs(path)
+	except Exception, e:
+		if e.args[0]==17: 
+			pass
+		else: 
+			raise e

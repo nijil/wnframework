@@ -180,7 +180,8 @@ def commonify_doclist(doclist, with_comments=1):
 		if with_comments:
 			c['##comment'] = 'These values are common in all dictionaries'
 		for k in common_keys:
-			c[k] = doclist[0][k]
+			if k in doclist[0]:
+				c[k] = doclist[0][k]
 		return c
 
 	def strip_common(d):
@@ -194,12 +195,12 @@ def commonify_doclist(doclist, with_comments=1):
 	
 		# make common dicts for all records
 		for d in doclist:
-			if not d['doctype'] in common_dict:
+			if not d['type'] in common_dict:
 				d1 = d.copy()
 				del d1['name']
-				common_dict[d['doctype']] = d1
+				common_dict[d['type']] = d1
 			else:
-				common_dict[d['doctype']] = get_common_dict(common_dict[d['doctype']], d)
+				common_dict[d['type']] = get_common_dict(common_dict[d['type']], d)
 		return common_dict
 
 	common_keys = ['owner','docstatus','creation','modified','modified_by']
@@ -208,15 +209,15 @@ def commonify_doclist(doclist, with_comments=1):
 	# make docs
 	final = []	
 	for d in doclist:
-		f = strip_common(get_diff_dict(common_dict[d['doctype']], d))
-		f['doctype'] = d['doctype'] # keep doctype!
+		f = strip_common(get_diff_dict(common_dict[d['type']], d))
+		f['type'] = d['type'] # keep doctype!
 		
 		# strip name for child records (only an auto generated number!)
-		if f['doctype'] != doclist[0]['doctype']:
+		if f['type'] != doclist[0]['type']:
 			del f['name']
 		
 		if with_comments:
-			f['##comment'] = d['doctype'] + ('name' in f and (', ' + f['name']) or '')
+			f['##comment'] = d['type'] + ('name' in f and (', ' + f['name']) or '')
 		final.append(f)
 
 	# add commons
@@ -224,7 +225,7 @@ def commonify_doclist(doclist, with_comments=1):
 	for d in common_dict.values():
 		d['name']='__common__'
 		if with_comments:
-			d['##comment'] = 'These values are common for all ' + d['doctype']
+			d['##comment'] = 'These values are common for all ' + d['type']
 		commons.append(strip_common(d))
 	
 	common_values = make_common(doclist)
@@ -241,10 +242,10 @@ def uncommonify_doclist(dl):
 	for d in dl[1:]:
 		if 'name' in d and d['name']=='__common__':
 			del d['name']
-			common_dict[d['doctype']] = d
+			common_dict[d['type']] = d
 		else:
 			d1 = common_values.copy()
-			d1.update(common_dict[d['doctype']])
+			d1.update(common_dict[d['type']])
 			d1.update(d)
 			final.append(d1)
 
@@ -257,7 +258,7 @@ def pprint_collection(doclist, with_comments = 1):
 	from webnotes.utils import pprint_dict
 	
 	dictlist =[pprint_dict(d) for d in commonify_doclist(doclist, with_comments)]
-	title = '# '+doclist[0]['doctype']+', '+doclist[0]['name']
+	title = '# '+doclist[0]['type']+', '+doclist[0]['name']
 	return title + '\n[\n' + ',\n'.join(dictlist) + '\n]'
 
 def peval_collection(txt):

@@ -90,7 +90,7 @@ class Model:
 			if prop.fieldtype == 'Select' and prop.options: 
 				self._validate_select(prop, value)
 	
-	def get_values(self):
+	def get_values(self, with_type=0):
 		"""
 			Returns dict of attributes except: 
 			* starting with underscore (_)
@@ -104,7 +104,8 @@ class Model:
 				and key not in reserved:
 			
 				tmp[key] = self.__dict__[key]
-		del tmp['type']
+		if not with_type:
+			del tmp['type']
 		return tmp
 
 	def save(self, new=0):

@@ -50,9 +50,9 @@
 		'write': 1
 	},
 
-	# type, Sandbox
+	# ModelDef, Sandbox
 	{
-		'type': 'type',
+		'type': 'ModelDef',
 		'name': 'Sandbox'
 	},
 

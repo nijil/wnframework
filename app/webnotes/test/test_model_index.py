@@ -3,22 +3,23 @@
 """
 
 from webnotes.run_tests import TestCase
-from webnotes.models.model_index import ModelIndex
+from webnotes.model.model_index import ModelIndex, get_model_path
 
-test_model_def = FileCollection(raw_models = [
+from webnotes.model.collection import FileCollection
+test_model_def = FileCollection(models = [
 		{
 			'name': 'Temp Sandbox',
-			'doctype': 'DocType',
+			'type': 'ModelDef',
 			'path': 'core/temp_sandbox'
 		},
 		{
-			'doctype':'DocField',
+			'type':'ModelProperty',
 			'fieldname':'test_data',
 			'label':'Test Data',
 			'fieldtype':'Data'
 		},
 		{
-			'doctype':'DocField',
+			'type':'ModelProperty',
 			'fieldname':'test_link',
 			'label':'Test Link',
 			'fieldtype':'Link',
@@ -28,20 +29,27 @@ test_model_def = FileCollection(raw_models = [
 )
 
 class TestModelIndex(TestCase):
+	def setUp(self):
+		# No begin
+		pass
+		
 	def write_model(self):
 		test_model_def.update()
 		
 	def test_add_model(self):
-		from webnotes.model.collection import FileCollection
 		# write a new model
+		self.write_model()
 
-		ModelIndex().index()
+		ModelIndex().index_all()
 		
 		# read it into collection
-		self.assertTrue(FileCollection('DocType', 'Temp Sandbox').parent.name == 'Temp Sandbox')
+		from webnotes import app_path
+		import os
+		fc = FileCollection(os.path.join(app_path, 'core/temp_sandbox/temp_sandbox.model'))
+		
+		self.assertTrue(fc.path == get_model_path('Temp Sandbox'))
 	
 		# delete it
 		test_model_def.delete()
 		
-	def test_update_model(self):
-	
+
