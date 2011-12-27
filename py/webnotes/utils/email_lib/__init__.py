@@ -1,5 +1,6 @@
 import webnotes
-
+import smtplib
+import msgprint 
 def sendmail_html(sender, recipients, subject, html, text=None, template=None, send_now=1, reply_to=None):
 	"""
 		Send an html mail with alternative text and using Page Templates
@@ -45,9 +46,14 @@ def sendmail(recipients, sender='', msg='', subject='[No Subject]', parts=[], cc
 		email.set_message(p[1])
 	for a in attach:
 		email.attach(a)
-
-	email.send(send_now)
-
+	try:
+		email.send(send_now)
+		
+	except smtplib.SMTPAuthenticationError:
+		msgprint("Authentication at the mail server has failed. Please check your SMTP credentials and try again.")
+	except:
+		msgprint("Mail was not sent. It could be a connection problem or you have entered the wrong data. If your data is  \
+			correct please try after a couple of minutes.")
 
 def get_footer():
 	"""
